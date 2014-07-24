@@ -1,12 +1,31 @@
-*.class
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.jar
-*.war
-*.ear
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+.*
+!.gitignore
+*classes/
+*~
+/build.*.properties
+!/build.daemon.properties
+/dist/
+build/
+/lib/*.jar
+!/lib/ant-contrib.jar
+!/lib/antelopetasks.jar
+!/lib/bcpg-jdk16.jar
+!/lib/bcprov-jdk16.jar
+/liferay-portal
+*.iml
+ivy.xml.MD5
+/ext/*-ext/docroot/WEB-INF/ext-impl/*.jar
+/ext/*-ext/docroot/WEB-INF/ext-service/*.jar
+/ext/*-ext/docroot/WEB-INF/ext-util-bridges/*.jar
+/ext/*-ext/docroot/WEB-INF/ext-util-java/*.jar
+/ext/*-ext/docroot/WEB-INF/ext-util-taglib/*.jar
+/portlets/*-portlet/docroot/WEB-INF/tld/*.tld
+!/portlets/*-portlet/docroot/WEB-INF/tld/liferay-portlet-ext.tld
+!/portlets/*-portlet/docroot/WEB-INF/tld/liferay-portlet.tld
+!/portlets/*-portlet/docroot/WEB-INF/tld/liferay-security.tld
+!/portlets/*-portlet/docroot/WEB-INF/tld/liferay-theme.tld
+!/portlets/*-portlet/docroot/WEB-INF/tld/liferay-ui.tld
+!/portlets/*-portlet/docroot/WEB-INF/tld/liferay-util.tld
+/portlets/*-portlet/docroot/WEB-INF/lib/*.jar
+!/portlets/*-portlet/docroot/WEB-INF/lib/*-portlet-service.jar
+/bin
