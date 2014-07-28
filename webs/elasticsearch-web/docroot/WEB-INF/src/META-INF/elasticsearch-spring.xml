@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+
+<beans default-destroy-method="destroy" default-init-method="afterPropertiesSet" xmlns="http://www.springframework.org/schema/beans" xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+    <!-- <bean class="com.liferay.portal.spring.context.PortletBeanFactoryPostProcessor" /> -->
+	
+    <!-- Search -->
+    <bean id="queryBuilder" class="com.rivetlogic.portal.search.elasticsearch.querybuilder.ElasticsearchQueryBuilder" />
+
+    <bean id="searchHelper" class="com.rivetlogic.portal.search.elasticsearch.util.ElasticsearchHelper">
+        <property name="esConnector" ref="elasticsearchConnector" />    
+        <property name="esQueryBuilder" ref="queryBuilder" />
+    </bean>
+    
+    <bean id="indexSearcher.elasticsearch" class="com.rivetlogic.portal.search.elasticsearch.ElasticsearchIndexSearcherImpl">
+        <property name="esSearchHelper" ref="searchHelper" />
+    </bean>
+
+    <!-- Indexer -->
+    <bean id="elasticsearchDocumentJSONBuilder" class="com.rivetlogic.portal.search.elasticsearch.indexer.document.ElasticsearchDocumentJSONBuilder" init-method="loadExcludedTypes" />
+    
+    <bean id="elasticsearchConnector" class="com.rivetlogic.portal.search.elasticsearch.util.ElasticsearchConnector" init-method="initESSetup" destroy-method="close" />
+
+    <bean id="elasticsearchIndexer" class="com.rivetlogic.portal.search.elasticsearch.indexer.ElasticsearchIndexerImpl">
+        <property name="documentJSONBuilder" ref="elasticsearchDocumentJSONBuilder" />
+    </bean>
+
+    <bean id="indexWriter.elasticsearch" class="com.rivetlogic.portal.search.elasticsearch.ElasticsearchIndexWriterImpl">
+        <property name="indexer" ref="elasticsearchIndexer" />
+        <property name="esConnector" ref="elasticsearchConnector" />
+    </bean>
+
+    <!-- Search Engine -->
+    <bean id="searchEngine.elasticsearch" class="com.liferay.portal.kernel.search.BaseSearchEngine">
+        <property name="clusteredWrite" value="false" />
+        <property name="indexSearcher" ref="indexSearcher.elasticsearch" />
+        <property name="indexWriter" ref="indexWriter.elasticsearch" />
+        <property name="luceneBased" value="true" />
+        <property name="vendor" value="ELASTICSEARCH" />
+    </bean>
+
+    <!-- Configurator -->
+    <bean id="searchEngineConfigurator.elasticsearch" class="com.liferay.portal.kernel.search.PluginSearchEngineConfigurator">
+		<property name="searchEngines">
+			<util:map>
+				<entry key="SYSTEM_ENGINE" value-ref="searchEngine.elasticsearch" />
+			</util:map>
+		</property>        
+    </bean>
+
+    <!-- ===== MESSAGING ===== -->
+
+    <!-- Message source -->
+    <bean id="messageSender.elasticsearch_plugin" class="com.rivetlogic.portal.messaging.sender.PluginMessageSender" />
+
+    <bean id="messageListener.bridging.elasticsearch" class="com.liferay.portal.kernel.messaging.BridgingMessageListener">
+        <property name="singleDestinationMessageSender">
+            <bean class="com.liferay.portal.kernel.messaging.sender.DefaultSingleDestinationMessageSender">
+                <property name="destinationName" value="liferay/search_writer/ELASTICSEARCH" />
+                <property name="messageSender" ref="messageSender.elasticsearch_plugin" />
+            </bean>
+        </property>
+    </bean>
+
+    <!-- Listeners -->
+    <bean id="messageListener.elasticsearch_reader" class="com.liferay.portal.kernel.search.messaging.SearchReaderMessageListener">
+        <property name="searchEngine" ref="searchEngine.elasticsearch" />
+    </bean>
+
+    <bean id="messageListener.elasticsearch_writer" class="com.liferay.portal.kernel.search.messaging.SearchWriterMessageListener">
+        <property name="searchEngine" ref="searchEngine.elasticsearch" />
+    </bean>
+
+    <!-- Destinations -->
+    <bean id="destination.elasticsearch_searcher" class="com.liferay.portal.kernel.messaging.ParallelDestination">
+        <constructor-arg index="0" type="java.lang.String" value="liferay/search_reader/ELASTICSEARCH" />
+    </bean>
+    <bean id="destination.elasticsearch_writer" class="com.liferay.portal.kernel.messaging.ParallelDestination">
+        <constructor-arg index="0" type="java.lang.String" value="liferay/search_writer/ELASTICSEARCH" />
+    </bean>
+
+    <!-- Routing -->
+    <bean id="messagingConfigurator.elasticsearch" class="com.liferay.portal.kernel.messaging.config.PluginMessagingConfigurator" depends-on="searchEngine.elasticsearch">
+        <property name="destinations">
+            <list>
+            	<ref bean="destination.elasticsearch_searcher" />
+                <ref bean="destination.elasticsearch_writer" />
+            </list>
+        </property>
+        <property name="messageListeners">
+            <map key-type="java.lang.String" value-type="java.util.List">
+                <entry key="liferay/search_reader/ELASTICSEARCH">
+                    <list value-type="com.liferay.portal.kernel.messaging.MessageListener">
+                        <ref bean="messageListener.elasticsearch_reader" />
+                    </list>
+                </entry>
+                <entry key="liferay/search_writer/SYSTEM_ENGINE">
+                    <list value-type="com.liferay.portal.kernel.messaging.MessageListener">
+                        <ref bean="messageListener.bridging.elasticsearch" />
+                    </list>
+                </entry>
+                <entry key="liferay/search_writer/ELASTICSEARCH">
+                    <list value-type="com.liferay.portal.kernel.messaging.MessageListener">
+                        <ref bean="messageListener.elasticsearch_writer" />
+                    </list>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+</beans>
