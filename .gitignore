@@ -26,6 +26,5 @@ ivy.xml.MD5
 !/portlets/*-portlet/docroot/WEB-INF/tld/liferay-theme.tld
 !/portlets/*-portlet/docroot/WEB-INF/tld/liferay-ui.tld
 !/portlets/*-portlet/docroot/WEB-INF/tld/liferay-util.tld
-/portlets/*-portlet/docroot/WEB-INF/lib/*.jar
 !/portlets/*-portlet/docroot/WEB-INF/lib/*-portlet-service.jar
 /bin
